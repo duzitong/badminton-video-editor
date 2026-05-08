@@ -4,31 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "badminton-video-editor"
-version = "0.1.0"
-description = "AI-powered badminton video editor using audio analysis and LLM frame analysis"
+version = "0.2.0"
+description = "Simple audio + screenshot tools for AI agents to edit badminton videos"
 requires-python = ">=3.11"
 dependencies = [
     "librosa>=0.10",
     "soundfile>=0.12",
     "numpy>=1.24",
-    "opencv-python>=4.8",
-    "Pillow>=10.0",
-    "ffmpeg-python>=0.2",
-    "click>=8.1",
 ]
 
 [project.optional-dependencies]
-llm = [
-    "openai>=1.0",
-    "anthropic>=0.20",
-]
 dev = [
     "pytest>=7.0",
-    "matplotlib>=3.7",
 ]
-
-[project.scripts]
-badminton-editor = "badminton_editor.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

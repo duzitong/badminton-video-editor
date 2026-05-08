@@ -1,118 +1,61 @@
 # Badminton Video Editor
 
-AI-powered badminton video editor that uses **audio analysis** to detect shuttle hit sounds and automatically segment rallies, build highlight reels, and apply effects.
+Three simple tools for an AI agent to edit badminton videos.
 
-## Why Audio-First?
+## How It Works
 
-Current multimodal LLMs (GPT-5.4, Claude Opus 4.7) **cannot**:
-- Process video files directly
-- Reliably detect the shuttlecock (too small, too fast)
+The **agent** is the brain. These tools are its hands:
 
-But they **can**:
-- Analyze extracted frames for player positions and actions
-- Process audio for sound classification
+1. **`analyze_audio`** — Extract audio, detect hit sounds → returns timestamps & clusters
+2. **`screenshot`** — Grab a frame at any time → agent views it to understand what's happening
+3. **`cut_segments`** — Cut & concat segments → final edited video
 
-This tool uses **librosa onset detection** as the primary signal for hit detection, optionally enhanced by LLM frame analysis for shot classification.
-
-## Architecture
-
+### Agent Workflow
 ```
-Input Video → ffmpeg → Audio Track → librosa onset detection → Hit timestamps
-                    → Key Frames  → LLM analysis (optional)  → Shot classification
-                                                              ↓
-                    Hit timestamps + Shot types → Rally Segmentation → Highlight Scoring
-                                                                    ↓
-                    Video Editing ← Rally clips + Highlight reel + Slow-mo on smashes
+Agent calls analyze_audio("match.mp4")
+  → gets: "67 clusters, cluster 3: 14.5s–19.8s, 5 hits (2 strong)"
+  
+Agent calls screenshot("match.mp4", 14.0)  # just before cluster
+  → views frame: players in ready position → rally hasn't started yet
+
+Agent calls screenshot("match.mp4", 20.5)  # just after cluster  
+  → views frame: player picking up shuttle → rally is over
+
+Agent decides: segment = {start: 13.5, end: 21.0}
+  ... repeats for each cluster ...
+
+Agent calls cut_segments("match.mp4", segments)
+  → done: edited.mp4
 ```
 
-## Installation
+## Install
 
 ```bash
 pip install -e .
-
-# For LLM frame analysis (optional):
-pip install -e ".[llm]"
 ```
 
-**Requirements**: Python 3.11+, ffmpeg on PATH.
-
-## Usage
-
-### Analyze a video (detect rallies)
-
-```bash
-badminton-editor analyze video.mp4 -o output/
-
-# Tune sensitivity:
-badminton-editor analyze video.mp4 --delta 0.2 --gap 4.0 --min-hits 3
-```
-
-### Full edit (analyze + cut rallies + highlight reel)
-
-```bash
-badminton-editor edit video.mp4 -o output/ --top-n 10
-```
-
-### LLM-enhanced analysis (optional)
-
-```bash
-export LLM_API_KEY=sk-...
-badminton-editor analyze-frames video.mp4 --provider openai
-```
-
-### Options
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--delta` | 0.3 | Onset detection sensitivity (lower = more sensitive) |
-| `--debounce` | 0.3 | Min seconds between detected hits |
-| `--gap` | 3.0 | Silence gap that marks rally boundary (seconds) |
-| `--min-hits` | 2 | Minimum hits to count as a rally |
-| `--top-n` | 5 | Number of rallies in highlight reel |
-
-## Output
-
-```
-output/
-├── audio.wav              # Extracted audio track
-├── analysis.json          # Rally data with timestamps and scores
-├── rallies/               # Individual rally clips
-│   ├── rally_000.mp4
-│   ├── rally_001.mp4
-│   └── ...
-└── highlight_reel.mp4     # Top-N rallies stitched together
-```
+Requires: Python 3.11+, ffmpeg on PATH.
 
 ## Python API
 
 ```python
-from badminton_editor import Pipeline
-from badminton_editor.pipeline import PipelineConfig
+from badminton_editor import analyze_audio, screenshot, cut_segments
 
-config = PipelineConfig(output_dir="output")
-pipeline = Pipeline(config)
+# 1. Understand the audio
+result = analyze_audio("match.mp4")
+print(result["summary"])
+# Duration: 965.8s (16.1min), 351 hits, 67 rally-like clusters
+#   Cluster 0: 0.0s–5.3s, 2 hits (1 strong)
+#   Cluster 1: 14.6s–16.4s, 3 hits (1 strong)
+#   ...
 
-# Analyze only
-result = pipeline.analyze("video.mp4")
-print(result.summary())
+# 2. Look at key moments
+screenshot("match.mp4", 14.0)   # agent views this image
+screenshot("match.mp4", 20.0)   # agent views this image
 
-# Analyze + edit
-result = pipeline.edit("video.mp4")
+# 3. Cut & concat
+cut_segments("match.mp4", [
+    {"start": 13.5, "end": 21.0},
+    {"start": 29.0, "end": 36.0},
+], "highlights.mp4")
 ```
-
-## How It Works
-
-1. **Audio extraction**: ffmpeg extracts mono WAV audio
-2. **Hit detection**: librosa onset detection finds amplitude spikes (shuttle hits)
-3. **Debouncing**: Merges events closer than 0.3s (same hit)
-4. **Rally segmentation**: Groups hits by time gaps (>3s silence = new rally)
-5. **Highlight scoring**: Ranks rallies by hit count, smash presence, and variety
-6. **Video editing**: ffmpeg cuts rally clips and concatenates highlights
-
-## Tested Results
-
-On a 16-minute amateur doubles match:
-- **351 hits** detected
-- **67 rallies** segmented
-- Top rally: 15 hits over 22.6s (score 0.92)
-- Processing time: ~10 seconds for analysis
