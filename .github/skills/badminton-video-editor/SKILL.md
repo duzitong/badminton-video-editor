@@ -47,27 +47,46 @@ Read the summary first to understand the match structure. The clusters are rough
 
 ### Step 2: View Screenshots to Refine Boundaries
 
-Audio clusters are approximate. Use screenshots to find exact rally start/end:
+Audio clusters only capture the hitting sounds — they miss the **serve wind-up** before the first hit and the **shuttle landing** after the last hit. Each segment should include the full play: from the server raising the racket to someone walking to pick up the shuttle.
+
+Use screenshots to find these real boundaries:
 
 ```python
 from badminton_editor import screenshot
-# Look just before a cluster starts — is a rally about to begin?
-path = screenshot("path/to/video.mp4", time_seconds=14.0, output_dir="output")
-# Look just after a cluster ends — is the rally over?
-path = screenshot("path/to/video.mp4", time_seconds=20.5, output_dir="output")
+# Look BEFORE the cluster — find where the serve starts
+path = screenshot("path/to/video.mp4", time_seconds=12.0, output_dir="output")
+# Look AFTER the cluster — find where the shuttle has landed
+path = screenshot("path/to/video.mp4", time_seconds=22.0, output_dir="output")
 ```
 
-After taking a screenshot, **view the image** to determine:
-- Are players in ready position? → Rally is about to start
-- Is a player picking up the shuttle? → Rally just ended
-- Are players walking/resting? → Between rallies, not interesting
-- Is the shuttle in the air? → Rally still active, extend the boundary
+#### Finding the START (serve)
 
-**Tips for determining boundaries:**
-- Start the segment 1-2 seconds before the first hit in a cluster
-- End the segment 1-2 seconds after the last hit
-- Take screenshots at those boundary times and adjust if the rally isn't quite starting/ending there
+Work backwards from the first hit in the cluster. Screenshot at 3-5 seconds before:
+- Is a player in serving stance (arm raised, shuttle held out)? → This is the start
+- Are players still walking to position? → Go forward a bit
+- Is a rally already in progress? → Go further back
+
+Typical serve happens 2-4 seconds before the first detected hit.
+
+#### Finding the END (shuttle lands / pickup)
+
+Work forwards from the last hit in the cluster. Screenshot at 2-5 seconds after:
+- Is a player bending down to pick up the shuttle? → This is a good end point
+- Are players still looking up / reacting? → The point just ended, go a bit further
+- Are players already walking / chatting / resting? → You've gone too far, come back
+
+Typical end is 2-4 seconds after the last hit — the shuttle has hit the ground and someone is about to pick it up.
+
+#### Binary search for boundaries
+
+If unsure, take 2-3 screenshots at different times and converge:
+1. Screenshot at cluster_start - 5s → too early? too late?
+2. Screenshot at cluster_start - 3s → adjust based on what you see
+3. Same approach for the end: cluster_end + 3s, then ±1s to fine-tune
+
+**Tips:**
 - For long gaps between clusters (>10s), the players are likely resting — skip those
+- Adjacent clusters with <5s gap are likely the same rally with a brief pause — merge them into one segment
 
 ### Step 3: Build Segments and Cut
 
@@ -91,10 +110,17 @@ This cuts each segment and concatenates them into one continuous video.
 ```
 User: "Edit this badminton video and keep only the rallies: match.mp4"
 
-Agent thinking:
+Agent:
   1. analyze_audio("match.mp4") → 351 hits, 67 clusters
-  2. For each cluster, screenshot before/after to find real boundaries
-  3. Build segment list from confirmed rally boundaries
+
+  2. For cluster 0 (first hit at 14.6s, last hit at 16.4s):
+     - screenshot at 11.0s → players walking to position, too early
+     - screenshot at 12.5s → server holding shuttle, raising racket → START = 12.5
+     - screenshot at 18.0s → player bending to pick up shuttle → END = 18.5
+     → segment: {start: 12.5, end: 18.5}
+
+  3. Repeat for remaining clusters...
+
   4. cut_segments("match.mp4", segments, "rallies_only.mp4")
 ```
 
