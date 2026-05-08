@@ -1,6 +1,8 @@
 # Output
 output/
 test-output/
+test-videos/
+tests/
 
 # Python
 __pycache__/
