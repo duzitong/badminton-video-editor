@@ -72,17 +72,27 @@ Typical serve happens 2-4 seconds before the first detected hit.
 
 **Do NOT just add a fixed offset to the last hit.** You MUST screenshot and verify the end visually.
 
-The last detected hit is the last *racket contact*. After that, the shuttle is still in the air — this flight time produces NO audio signal. Depending on the shot type, the shuttle flies for 1-4 seconds after the last hit before landing. Then there's another 1-3 seconds of player reaction. The audio tells you nothing about any of this — only your eyes can find the real end.
+The last detected hit is the last *racket contact*. After that, the shuttle is still in the air — this flight time produces NO audio signal. The audio tells you nothing about the end — only your eyes can find it.
 
 **Procedure — always do this, do not skip:**
 
-1. Screenshot at last_hit + 5s. View it.
-2. Ask yourself: **has someone started walking to pick up the shuttle?**
-   - YES → this is your end time. Done.
-   - NO, players are still watching / reacting / pointing → screenshot at +6s, +7s, keep going
-   - NO, players are already resting / chatting → come back to +4s, +3s
+Take 4 screenshots in one batch at last_hit +2s, +3s, +4s, +5s. View all of them:
 
-**You must see the pickup moment.** Do not guess. Do not use a fixed offset. The whole point of the screenshot tool is to get this right.
+```python
+for offset in [2, 3, 4, 5]:
+    screenshot(video, last_hit + offset, output_dir="output")
+```
+
+Then look at each frame and pick the one where a player is about to pick up or is picking up the shuttle:
+
+- **+2s**: shuttle likely still in the air or just landing
+- **+3s**: shuttle has landed, players reacting
+- **+4s**: player walking to pick up shuttle ← often the right one
+- **+5s**: player picking up or already picked up
+
+Pick the frame where the shuttle has clearly landed and a player is moving to pick it up. Use that timestamp as your end. If even at +5s the players are still reacting (e.g., disputing a line call), take +6s and +7s.
+
+**You must see the pickup moment.** Do not guess. Do not use a fixed offset.
 
 Visual cues:
 - Player **bending down or walking to pick up shuttle** → ✅ correct end
