@@ -70,19 +70,31 @@ Typical serve happens 2-4 seconds before the first detected hit.
 
 #### Finding the END (shuttle lands / pickup)
 
-Work forwards from the last hit in the cluster. Screenshot at 2-5 seconds after:
-- Is a player bending down to pick up the shuttle? → This is a good end point
-- Are players still looking up / reacting? → The point just ended, go a bit further
-- Are players already walking / chatting / resting? → You've gone too far, come back
+**Important**: The last detected hit is the last *racket contact*, but the shuttle is still flying after that for 1-3 seconds. This flying time is NOT captured in the audio. If the last shot goes out of court or is a lob/clear, the shuttle may fly even longer before landing. You must account for this.
 
-Typical end is 2-4 seconds after the last hit — the shuttle has hit the ground and someone is about to pick it up.
+Start screenshotting at **4-6 seconds** after the last hit, not 2:
+
+1. Screenshot at last_hit + 4s:
+   - Players still watching the shuttle / pointing at lines → shuttle just landed, extend further
+   - A player is walking toward the shuttle to pick it up → **good end point**
+   - Players already chatting / resting / high-fiving → you can come back 1-2s
+
+2. If players are still reacting at +4s, try +5s or +6s
+
+Key visual cues for "the point is over":
+- A player is **bending down or walking to pick up the shuttle** → ideal end frame
+- Players are **turning away from the net** → point just ended
+- Players are **looking at the sideline / baseline** (judging if in/out) → shuttle just landed, wait 1-2s more
+- Players are **celebrating or disputing** → point ended, include this moment
+
+Typical end is **4-6 seconds** after the last detected hit (1-3s of shuttle flight + 1-3s for the reaction and pickup).
 
 #### Binary search for boundaries
 
 If unsure, take 2-3 screenshots at different times and converge:
 1. Screenshot at cluster_start - 5s → too early? too late?
 2. Screenshot at cluster_start - 3s → adjust based on what you see
-3. Same approach for the end: cluster_end + 3s, then ±1s to fine-tune
+3. Same approach for the end: cluster_end + 5s, then ±1s to fine-tune
 
 **Tips:**
 - For long gaps between clusters (>10s), the players are likely resting — skip those
@@ -116,8 +128,9 @@ Agent:
   2. For cluster 0 (first hit at 14.6s, last hit at 16.4s):
      - screenshot at 11.0s → players walking to position, too early
      - screenshot at 12.5s → server holding shuttle, raising racket → START = 12.5
-     - screenshot at 18.0s → player bending to pick up shuttle → END = 18.5
-     → segment: {start: 12.5, end: 18.5}
+     - screenshot at 20.5s → player still looking at shuttle (out of court shot)
+     - screenshot at 22.0s → player walking to pick up shuttle → END = 22.0
+     → segment: {start: 12.5, end: 22.0}
 
   3. Repeat for remaining clusters...
 
