@@ -70,24 +70,26 @@ Typical serve happens 2-4 seconds before the first detected hit.
 
 #### Finding the END (shuttle lands / pickup)
 
-**Important**: The last detected hit is the last *racket contact*, but the shuttle is still flying after that for 1-3 seconds. This flying time is NOT captured in the audio. If the last shot goes out of court or is a lob/clear, the shuttle may fly even longer before landing. You must account for this.
+**Do NOT just add a fixed offset to the last hit.** You MUST screenshot and verify the end visually.
 
-Start screenshotting at **4-6 seconds** after the last hit, not 2:
+The last detected hit is the last *racket contact*. After that, the shuttle is still in the air — this flight time produces NO audio signal. Depending on the shot type, the shuttle flies for 1-4 seconds after the last hit before landing. Then there's another 1-3 seconds of player reaction. The audio tells you nothing about any of this — only your eyes can find the real end.
 
-1. Screenshot at last_hit + 4s:
-   - Players still watching the shuttle / pointing at lines → shuttle just landed, extend further
-   - A player is walking toward the shuttle to pick it up → **good end point**
-   - Players already chatting / resting / high-fiving → you can come back 1-2s
+**Procedure — always do this, do not skip:**
 
-2. If players are still reacting at +4s, try +5s or +6s
+1. Screenshot at last_hit + 5s. View it.
+2. Ask yourself: **has someone started walking to pick up the shuttle?**
+   - YES → this is your end time. Done.
+   - NO, players are still watching / reacting / pointing → screenshot at +6s, +7s, keep going
+   - NO, players are already resting / chatting → come back to +4s, +3s
 
-Key visual cues for "the point is over":
-- A player is **bending down or walking to pick up the shuttle** → ideal end frame
-- Players are **turning away from the net** → point just ended
-- Players are **looking at the sideline / baseline** (judging if in/out) → shuttle just landed, wait 1-2s more
-- Players are **celebrating or disputing** → point ended, include this moment
+**You must see the pickup moment.** Do not guess. Do not use a fixed offset. The whole point of the screenshot tool is to get this right.
 
-Typical end is **4-6 seconds** after the last detected hit (1-3s of shuttle flight + 1-3s for the reaction and pickup).
+Visual cues:
+- Player **bending down or walking to pick up shuttle** → ✅ correct end
+- Players **looking at sideline / baseline** (judging in/out) → shuttle just landed, go 1-2s further
+- Players **celebrating or disputing** → point just ended, include this
+- Players **turning away from the net** → point is over, this or +1s is your end
+- Players **already back in position or resting** → you went too far, come back
 
 #### Binary search for boundaries
 
