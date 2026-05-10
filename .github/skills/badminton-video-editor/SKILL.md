@@ -148,7 +148,7 @@ After all subagents finish:
 
 **Tips:**
 - For long gaps between clusters (>10s), the players are likely resting — skip those
-- Adjacent clusters with <5s gap are likely the same rally with a brief pause — merge them into one segment before spawning subagents
+- Adjacent clusters with <3s gap are likely the same rally with a brief pause — merge them into one segment before spawning subagents
 
 ### Step 3: Build Segments and Cut
 
