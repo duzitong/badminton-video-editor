@@ -25,7 +25,29 @@ Edit badminton match videos by detecting shuttle hit sounds from audio and viewi
 
 ## Workflow
 
-Follow these steps in order:
+Videos are stored in the `raw/` directory. Output for each video goes in `output/<video_name>/` (where `<video_name>` is the filename without extension). This keeps each video's analysis, screenshots, and edited result isolated.
+
+### Step 0: Discover Videos
+
+List available videos and determine output directories:
+
+```python
+import os
+from pathlib import Path
+
+raw_dir = Path("raw")
+videos = sorted(raw_dir.glob("*.mp4"))  # also check *.MP4, *.mov if needed
+for video in videos:
+    output_dir = Path("output") / video.stem
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print(f"{video} → {output_dir}/")
+```
+
+If the user specified particular videos, filter to those. Otherwise process all found in `raw/`.
+
+For **multiple videos**, process each video independently through Steps 1–3 below. Steps 1 and 2 for different videos can be parallelised.
+
+Follow these steps in order for each video:
 
 ### Step 1: Analyze Audio
 
@@ -33,7 +55,7 @@ Run the audio analyzer to get hit timestamps and clusters:
 
 ```python
 from badminton_editor import analyze_audio
-result = analyze_audio("path/to/video.mp4", output_dir="output")
+result = analyze_audio("raw/match.mp4", output_dir="output/match")
 print(result["summary"])
 ```
 
@@ -60,14 +82,14 @@ For each cluster, spawn a subagent with this context:
 ```
 You are detecting the real start and end of a badminton rally in a video.
 
-Video: <path/to/video.mp4>
-Output dir: <output_dir>
+Video: raw/<video_name>.mp4
+Output dir: output/<video_name>
 Cluster: first_hit=<T1>s, last_hit=<T2>s
 
 Use the `screenshot` function to take frames and find the real boundaries:
 
   from badminton_editor import screenshot
-  path = screenshot("path/to/video.mp4", time_seconds=12.0, output_dir="output")
+  path = screenshot("raw/<video_name>.mp4", time_seconds=12.0, output_dir="output/<video_name>")
 
 FINDING THE START:
 Work backwards from first_hit. Screenshot at first_hit - 3s and first_hit - 5s.
@@ -132,7 +154,7 @@ segments = [
     {"start": 45.0, "end": 58.0},
     # ... more segments
 ]
-output = cut_segments("path/to/video.mp4", segments, output_path="output/edited.mp4")
+output = cut_segments("raw/match.mp4", segments, output_path="output/match/edited.mp4")
 ```
 
 This cuts each segment and concatenates them into one continuous video.
@@ -143,18 +165,15 @@ This cuts each segment and concatenates them into one continuous video.
 User: "Edit this badminton video and keep only the rallies: match.mp4"
 
 Agent:
-  1. analyze_audio("match.mp4") → 351 hits, 67 clusters
+  0. Finds raw/match.mp4 → output dir: output/match/
 
-  2. For cluster 0 (first hit at 14.6s, last hit at 16.4s):
-     - screenshot at 11.0s → players walking to position, too early
-     - screenshot at 12.5s → server holding shuttle, raising racket → START = 12.5
-     - screenshot at 20.5s → player still looking at shuttle (out of court shot)
-     - screenshot at 22.0s → player walking to pick up shuttle → END = 22.0
-     → segment: {start: 12.5, end: 22.0}
+  1. analyze_audio("raw/match.mp4", output_dir="output/match") → 351 hits, 67 clusters
 
-  3. Repeat for remaining clusters...
+  2. Spawns 67 subagents (claude-opus-4.7) in parallel, each with video=raw/match.mp4,
+     output_dir=output/match, and their cluster's first_hit/last_hit.
+     Collects results, discards nulls, sorts and merges overlapping segments.
 
-  4. cut_segments("match.mp4", segments, "rallies_only.mp4")
+  3. cut_segments("raw/match.mp4", segments, "output/match/edited.mp4")
 ```
 
 ## Tuning Parameters
