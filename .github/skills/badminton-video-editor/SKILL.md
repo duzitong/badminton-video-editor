@@ -88,10 +88,7 @@ The last detected hit is the last *racket contact*. After that, the shuttle is s
 — this flight time can be 1-4 seconds and produces NO audio signal. Cutting too early is the
 most common mistake. Always err on the side of too late rather than too early.
 
-**Default starting point: last_hit + 5s**, not +2s. The shuttle is almost certainly still
-in the air at +2s and often still flying at +3s.
-
-Take screenshots at last_hit +4s, +5s, +6s, +7s in one batch. View all of them:
+**Default starting point: last_hit + 3s**. Take screenshots at last_hit +3s, +4s, +5s, +6s in one batch. View all of them:
 - Shuttle still visible in air → too early, go further
 - Shuttle just hit the ground, players reacting → include 1 more second past this
 - Player bending down or walking to pick up shuttle → ✅ correct end
@@ -99,8 +96,8 @@ Take screenshots at last_hit +4s, +5s, +6s, +7s in one batch. View all of them:
 - Players celebrating or disputing → point just ended, include this
 - Players already back in position or resting → you went too far, come back
 
-If at +7s the shuttle has not clearly landed, take +8s and +9s.
-**Do NOT stop at +5s by default.** The shuttle flight after the last hit routinely
+If at +6s the shuttle has not clearly landed, take +7s and +8s.
+**Do NOT stop at +6s by default.** The shuttle flight after the last hit routinely
 exceeds 3-4 seconds in real match play.
 
 Do NOT use a fixed offset. You must confirm the shuttle has landed.
