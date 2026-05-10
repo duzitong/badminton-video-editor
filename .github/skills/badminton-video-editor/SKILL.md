@@ -45,72 +45,55 @@ This returns:
 
 Read the summary first to understand the match structure. The clusters are rough rally boundaries based on audio alone.
 
-### Step 2: View Screenshots to Refine Boundaries
+### Step 2: Delegate Boundary Detection to Subagents
 
 Audio clusters only capture the hitting sounds — they miss the **serve wind-up** before the first hit and the **shuttle landing** after the last hit. Each segment should include the full play: from the server raising the racket to someone walking to pick up the shuttle.
 
-Use screenshots to find these real boundaries:
+**Delegate this visual boundary detection to subagents** — one subagent per cluster (or small batch of clusters). This allows all clusters to be processed in parallel.
 
-```python
-from badminton_editor import screenshot
-# Look BEFORE the cluster — find where the serve starts
-path = screenshot("path/to/video.mp4", time_seconds=12.0, output_dir="output")
-# Look AFTER the cluster — find where the shuttle has landed
-path = screenshot("path/to/video.mp4", time_seconds=22.0, output_dir="output")
+#### Subagent prompt template
+
+For each cluster, spawn a subagent with this context:
+
 ```
+You are detecting the real start and end of a badminton rally in a video.
 
-#### Finding the START (serve)
+Video: <path/to/video.mp4>
+Output dir: <output_dir>
+Cluster: first_hit=<T1>s, last_hit=<T2>s
 
-Work backwards from the first hit in the cluster. Screenshot at 3-5 seconds before:
+Use the `screenshot` function to take frames and find the real boundaries:
+
+  from badminton_editor import screenshot
+  path = screenshot("path/to/video.mp4", time_seconds=12.0, output_dir="output")
+
+FINDING THE START:
+Work backwards from first_hit. Screenshot at first_hit - 3s and first_hit - 5s.
 - Is a player in serving stance (arm raised, shuttle held out)? → This is the start
 - Are players still walking to position? → Go forward a bit
 - Is a rally already in progress? → Go further back
-
 Typical serve happens 2-4 seconds before the first detected hit.
 
-#### Finding the END (shuttle lands / pickup)
+FINDING THE END:
+Take 4 screenshots in one batch at last_hit +2s, +3s, +4s, +5s. View all of them.
+Pick the frame where the shuttle has clearly landed and a player is moving to pick it up.
+- Player bending down or walking to pick up shuttle → correct end
+- Players looking at sideline/baseline (judging in/out) → go 1-2s further
+- Players celebrating or disputing → point just ended, include this
+- Players already back in position or resting → you went too far, come back
+If even at +5s players are still reacting, take +6s and +7s.
+Do NOT use a fixed offset. You must see the pickup moment.
 
-**Do NOT just add a fixed offset to the last hit.** You MUST screenshot and verify the end visually.
-
-The last detected hit is the last *racket contact*. After that, the shuttle is still in the air — this flight time produces NO audio signal. The audio tells you nothing about the end — only your eyes can find it.
-
-**Procedure — always do this, do not skip:**
-
-Take 4 screenshots in one batch at last_hit +2s, +3s, +4s, +5s. View all of them:
-
-```python
-for offset in [2, 3, 4, 5]:
-    screenshot(video, last_hit + offset, output_dir="output")
+Return ONLY: {"start": <seconds>, "end": <seconds>}
 ```
 
-Then look at each frame and pick the one where a player is about to pick up or is picking up the shuttle:
+#### Coordinator responsibilities
 
-- **+2s**: shuttle likely still in the air or just landing
-- **+3s**: shuttle has landed, players reacting
-- **+4s**: player walking to pick up shuttle ← often the right one
-- **+5s**: player picking up or already picked up
-
-Pick the frame where the shuttle has clearly landed and a player is moving to pick it up. Use that timestamp as your end. If even at +5s the players are still reacting (e.g., disputing a line call), take +6s and +7s.
-
-**You must see the pickup moment.** Do not guess. Do not use a fixed offset.
-
-Visual cues:
-- Player **bending down or walking to pick up shuttle** → ✅ correct end
-- Players **looking at sideline / baseline** (judging in/out) → shuttle just landed, go 1-2s further
-- Players **celebrating or disputing** → point just ended, include this
-- Players **turning away from the net** → point is over, this or +1s is your end
-- Players **already back in position or resting** → you went too far, come back
-
-#### Binary search for boundaries
-
-If unsure, take 2-3 screenshots at different times and converge:
-1. Screenshot at cluster_start - 5s → too early? too late?
-2. Screenshot at cluster_start - 3s → adjust based on what you see
-3. Same approach for the end: cluster_end + 5s, then ±1s to fine-tune
+After all subagents finish, collect their `{start, end}` results and proceed to Step 3.
 
 **Tips:**
 - For long gaps between clusters (>10s), the players are likely resting — skip those
-- Adjacent clusters with <5s gap are likely the same rally with a brief pause — merge them into one segment
+- Adjacent clusters with <5s gap are likely the same rally with a brief pause — merge them into one segment before spawning subagents
 
 ### Step 3: Build Segments and Cut
 
