@@ -107,7 +107,14 @@ Return ONLY: {"start": <seconds>, "end": <seconds>} or null if discarded.
 
 #### Coordinator responsibilities
 
-After all subagents finish, collect their `{start, end}` results and proceed to Step 3.
+After all subagents finish:
+
+1. Collect non-null `{start, end}` results and sort them by `start`.
+2. **Merge overlapping or adjacent segments** before cutting:
+   - Two segments overlap if `seg[i].end >= seg[i+1].start`
+   - Merge by keeping `min(start)` and `max(end)`
+   - Repeat until no overlaps remain
+3. Pass the merged list to Step 3.
 
 **Tips:**
 - For long gaps between clusters (>10s), the players are likely resting — skip those
