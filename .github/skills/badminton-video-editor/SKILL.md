@@ -76,6 +76,13 @@ Work backwards from first_hit. Screenshot at first_hit - 3s and first_hit - 5s.
 - Is a rally already in progress? → Go further back
 Typical serve happens 2-4 seconds before the first detected hit.
 
+IF THIS CLUSTER HAS ONLY 1 HIT:
+The single hit may be a serve ace or a direct-point serve (the server wins the point
+without the opponent touching the shuttle). Do NOT discard it automatically.
+Screenshot at first_hit - 3s to check:
+- Is a player in serving stance? → Likely a serve ace. Keep it and find start/end normally.
+- No clear serve or player activity visible? → Likely a false positive (background noise). Discard: return null.
+
 FINDING THE END:
 Take 4 screenshots in one batch at last_hit +2s, +3s, +4s, +5s. View all of them.
 Pick the frame where the shuttle has clearly landed and a player is moving to pick it up.
@@ -86,7 +93,7 @@ Pick the frame where the shuttle has clearly landed and a player is moving to pi
 If even at +5s players are still reacting, take +6s and +7s.
 Do NOT use a fixed offset. You must see the pickup moment.
 
-Return ONLY: {"start": <seconds>, "end": <seconds>}
+Return ONLY: {"start": <seconds>, "end": <seconds>} or null if discarded.
 ```
 
 #### Coordinator responsibilities
@@ -149,5 +156,5 @@ If detection is too noisy or missing hits, adjust `analyze_audio` parameters:
 - Screenshots are saved as `frame_{time}s.jpg` in the output directory
 - You do NOT need to view every cluster — focus on the ones the user cares about
 - For "create highlights", pick clusters with the most hits and strong hits (smashes)
-- For "keep all rallies", process every cluster including short ones
+- For "keep all rallies", process every cluster including 1-hit clusters (they may be serve aces) — subagents will discard true false positives
 - The video file is NOT read by this skill directly — only audio extraction and frame grabbing via ffmpeg
