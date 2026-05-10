@@ -79,7 +79,7 @@ Read the summary first to understand the match structure. The clusters are rough
 
 Audio clusters only capture the hitting sounds — they miss the **serve wind-up** before the first hit and the **shuttle landing** after the last hit. Each segment should include the full play: from the server raising the racket to someone walking to pick up the shuttle.
 
-**Delegate this visual boundary detection to subagents** — spawn **3 subagents at a time**, wait for them to finish, then spawn the next batch of 3. This keeps resource usage manageable while still processing in parallel.
+**Delegate this visual boundary detection to subagents** — spawn **5 subagents at a time**, wait for them to finish, then spawn the next batch of 5. This keeps resource usage manageable while still processing in parallel.
 
 Spawn each subagent using the `task` tool with **`model: "claude-opus-4.7"`** — this model handles visual frame analysis reliably.
 
