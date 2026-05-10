@@ -51,6 +51,8 @@ Audio clusters only capture the hitting sounds — they miss the **serve wind-up
 
 **Delegate this visual boundary detection to subagents** — one subagent per cluster (or small batch of clusters). This allows all clusters to be processed in parallel.
 
+Spawn each subagent using the `task` tool with **`model: "claude-opus-4.7"`** — this model handles visual frame analysis reliably.
+
 #### Subagent prompt template
 
 For each cluster, spawn a subagent with this context:
