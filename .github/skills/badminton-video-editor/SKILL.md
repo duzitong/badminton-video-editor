@@ -164,5 +164,5 @@ If detection is too noisy or missing hits, adjust `analyze_audio` parameters:
 - Screenshots are saved as `frame_{time}s.jpg` in the output directory
 - You do NOT need to view every cluster — focus on the ones the user cares about
 - For "create highlights", pick clusters with the most hits and strong hits (smashes)
-- For "keep all rallies", process every cluster but skip very short ones (1-2 hits, likely false positives)
+- For "keep all rallies", process every cluster including short ones
 - The video file is NOT read by this skill directly — only audio extraction and frame grabbing via ffmpeg
