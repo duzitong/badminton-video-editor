@@ -43,7 +43,15 @@ for video in videos:
     print(f"{video} → {output_dir}/")
 ```
 
-If the user specified particular videos, filter to those. Otherwise process all found in `raw/`.
+If the user specified particular videos, filter to those. If no video was specified, **list the available videos and ask the user which one(s) to edit** using the `ask_user` tool:
+
+```python
+# Example: ask_user with choices built from discovered videos
+choices = [v.name for v in videos]
+# present choices to user, wait for selection
+```
+
+Present the filenames as choices (not full paths). Wait for the user's answer before proceeding.
 
 For **multiple videos**, process each video independently through Steps 1–3 below. Steps 1 and 2 for different videos can be parallelised.
 
